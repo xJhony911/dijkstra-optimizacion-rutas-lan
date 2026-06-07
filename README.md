@@ -48,7 +48,18 @@ Por lo tanto, al calcular el "camino mínimo", el algoritmo está identificando 
 * **Estructura de Datos:** `heapq` (para la gestión de la cola de prioridad)
 * **Validación Científica:** `NetworkX` (análisis y validación de grafos)
 * **Visualización:** `Matplotlib` (representación gráfica de la topología y rutas óptimas)
+## ☁️ Prueba Rápida en la Nube (Google Colab)
 
+Si deseas probar la simulación, ver el código en acción y explorar la visualización gráfica de la red sin necesidad de instalar Python ni clonar el repositorio localmente, hemos preparado un entorno interactivo.
+
+Puedes ejecutar todo el proyecto directamente en tu navegador haciendo clic en el siguiente botón:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1o3w4UHJfTHMeLBkFKAgm5gWISPbSu9CS?usp=sharing)
+
+**Instrucciones para Colab:**
+1. Abre el enlace.
+2. Inicia sesión con tu cuenta de Google.
+3. Ve a la pestaña **Entorno de ejecución** y selecciona **Ejecutar todo** (o presiona `Ctrl + F9`).
 ## ⚙️ Estructura del Proyecto
 * `main.py`: Ejecución principal del algoritmo de Dijkstra y reconstrucción de la ruta óptima.
 * `grafo_lan.py`: Definición de la topología de la red mediante diccionarios.
