@@ -1,3 +1,16 @@
+## 👨‍💻 Equipo de Desarrollo
+
+Este proyecto fue desarrollado de forma colaborativa por estudiantes de cuarto semestre (PAO 4) de la carrera de **Tecnología de la Información** en la **ESPOCH**, uniendo bases de matemática avanzada con programación en Python.
+
+| Integrante | Rol | Enfoque Principal |
+| :--- | :--- | :--- |
+| **Jonathan Acosta** 👑 | Líder del Proyecto | Coordinación general, arquitectura de la solución y dirección técnica del desarrollo.[cite: 1] |
+| **Dennys Daquilema** 🧮 | Desarrollo Matemático | Modelado teórico del grafo, demostración de la técnica de relajación y matrices.[cite: 1] |
+| **Jhonn Elizalde** 💻 | Impl. Computacional | Traducción de la matemática a código, manejo de la cola de prioridad (`heapq`).[cite: 1] |
+| **José Mullo** 🕵️‍♂️ | Validación | Pruebas de estrés, simulación de escenarios dinámicos y validación cruzada.[cite: 1] |
+| **Kevin Chinlle** 📝 | Documentación | Estructuración metodológica, redacción técnica y rigor académico.[cite: 1] |
+| **Kevin Morales** 🎨 | Presentación | Diseño visual, diagramación de la topología y comunicación de resultados.[cite: 1] |
+
 # Optimización de Rutas en Redes LAN mediante el Algoritmo de Dijkstra
 
 ## 📖 Descripción General
