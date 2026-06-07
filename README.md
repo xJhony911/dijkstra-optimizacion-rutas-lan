@@ -18,6 +18,24 @@ Este proyecto aborda el problema de la ineficiencia en la selección de rutas de
 
 Proyecto desarrollado para la asignatura de **Matemática Avanzada** en la **Carrera de Tecnología de la Información**.
 
+## 🧠 ¿Qué es el Algoritmo de Dijkstra?
+
+El algoritmo de Dijkstra es un método voraz (*greedy*) diseñado para resolver el problema del camino mínimo en grafos ponderados con pesos no negativos. Su objetivo es determinar con exactitud la ruta de menor costo acumulado desde un nodo origen hacia todos los demás nodos que componen la red.
+
+### ¿Cómo funciona matemáticamente?
+El algoritmo se basa en la **técnica de relajación** iterativa. Mantiene estructuras de datos para rastrear las distancias mínimas conocidas y los nodos predecesores. En cada paso, selecciona el vértice con el costo acumulado más bajo y evalúa a todos sus vecinos. Si descubre que pasar por ese vértice ofrece un camino más "barato" hacia un vecino, actualiza la distancia mínima de ese vecino (relajación). 
+
+Para que este proceso sea computacionalmente eficiente, nuestro proyecto implementa una cola de prioridad basada en `min-heap` (mediante la librería `heapq` de Python), logrando una complejidad temporal óptima de **$O((V+E)\log V)$**.
+
+### Su aplicación en este proyecto (Redes LAN)
+En el ámbito de la Tecnología de la Información, Dijkstra es la base matemática fundamental de protocolos de enrutamiento dinámico de estado de enlace (Link-State) utilizados en la industria, como **OSPF** (Open Shortest Path First). 
+
+En nuestro modelo de simulación:
+* **Los vértices (V)** representan los dispositivos físicos de la LAN (routers, switches, estaciones de trabajo).
+* **Las aristas (E)** representan los enlaces de comunicación.
+* **El peso (w)** de cada enlace representa la **latencia medida en milisegundos (ms)**. 
+
+Por lo tanto, al calcular el "camino mínimo", el algoritmo está identificando activamente la ruta más rápida y eficiente para la transmisión de paquetes de datos, evitando cuellos de botella y maximizando el rendimiento de la red.
 ## ✨ Características Principales
 * **Modelado Matemático:** Representación de dispositivos físicos (routers, switches, estaciones) como un grafo ponderado no dirigido.
 * **Algoritmo de Dijkstra Propio:** Implementación computacional del algoritmo utilizando la técnica de relajación iterativa y colas de prioridad.
