@@ -4,12 +4,12 @@ Este proyecto fue desarrollado de forma colaborativa por estudiantes de cuarto s
 
 | Integrante | Rol | Enfoque Principal |
 | :--- | :--- | :--- |
-| **Jonathan Acosta** 👑 | Líder del Proyecto | Coordinación general, arquitectura de la solución y dirección técnica del desarrollo.[cite: 1] |
-| **Dennys Daquilema** 🧮 | Desarrollo Matemático | Modelado teórico del grafo, demostración de la técnica de relajación y matrices.[cite: 1] |
-| **Jhonn Elizalde** 💻 | Impl. Computacional | Traducción de la matemática a código, manejo de la cola de prioridad (`heapq`).[cite: 1] |
+| **Jonathan Acosta** 👑 | Líder del Proyecto | Coordinación general, arquitectura de la solución y dirección técnica del desarrollo. |
+| **Dennys Daquilema** 🧮 | Desarrollo Matemático | Modelado teórico del grafo, demostración de la técnica de relajación y matrices.|
+| **Jhonn Elizalde** 💻 | Impl. Computacional | Traducción de la matemática a código, manejo de la cola de prioridad (`heapq`). |
 | **José Mullo** 🕵️‍♂️ | Validación | Pruebas de estrés, simulación de escenarios dinámicos y validación cruzada.[cite: 1] |
-| **Kevin Chinlle** 📝 | Documentación | Estructuración metodológica, redacción técnica y rigor académico.[cite: 1] |
-| **Kevin Morales** 🎨 | Presentación | Diseño visual, diagramación de la topología y comunicación de resultados.[cite: 1] |
+| **Kevin Chinlle** 📝 | Documentación | Estructuración metodológica, redacción técnica y rigor académico. |
+| **Kevin Morales** 🎨 | Presentación | Diseño visual, diagramación de la topología y comunicación de resultados.|
 
 # Optimización de Rutas en Redes LAN mediante el Algoritmo de Dijkstra
 
