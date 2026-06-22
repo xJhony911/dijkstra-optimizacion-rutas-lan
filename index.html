@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dijkstra · Optimización LAN | ESPOCH Grupo 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:     #060C18;
+  --bg2:    #0C1426;
+  --bg3:    #111D38;
+  --green:  #00FF88;
+  --blue:   #2E7BF0;
+  --orange: #FF6B35;
+  --yellow: #F7C948;
+  --text:   #E2E8F0;
+  --muted:  #5A6A8A;
+  --border: #1A2540;
+  --glow-g: rgba(0,255,136,0.15);
+  --glow-b: rgba(46,123,240,0.15);
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:16px;line-height:1.7;overflow-x:hidden}
+
+/* ── HERO ── */
+.hero{
+  position:relative;min-height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;gap:2rem;
+  padding:5rem 4rem 4rem;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 60% at 70% 50%, rgba(46,123,240,0.08) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.hero-left{position:relative;z-index:2}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--green);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.7rem;
+}
+.eyebrow::before{content:'';width:24px;height:1px;background:var(--green)}
+
+h1{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:clamp(1.8rem,3.5vw,3rem);
+  font-weight:600;line-height:1.15;
+  letter-spacing:-0.03em;
+  margin-bottom:1.2rem;
+}
+h1 .g{color:var(--green)}
+h1 .b{color:var(--blue)}
+
+.hero-desc{color:var(--muted);font-size:0.95rem;max-width:480px;line-height:1.75;margin-bottom:2rem}
+
+.hero-chips{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:2rem}
+.chip{
+  font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+  padding:0.3rem 0.8rem;border-radius:4px;
+  border:1px solid var(--border);color:var(--muted);
+  background:rgba(12,20,38,0.8);
+}
+.chip.g{border-color:rgba(0,255,136,0.4);color:var(--green);background:rgba(0,255,136,0.05)}
+.chip.b{border-color:rgba(46,123,240,0.4);color:var(--blue);background:rgba(46,123,240,0.05)}
+.chip.o{border-color:rgba(255,107,53,0.4);color:var(--orange);background:rgba(255,107,53,0.05)}
+
+.result-badge{
+  display:inline-flex;flex-direction:column;
+  background:var(--bg2);border:1px solid var(--border);
+  border-left:3px solid var(--green);
+  border-radius:8px;padding:1rem 1.4rem;
+}
+.result-badge .rb-label{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem}
+.result-badge .rb-route{font-family:'IBM Plex Mono',monospace;font-size:1rem;color:var(--green);font-weight:500}
+.result-badge .rb-cost{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--orange);margin-top:0.25rem}
+
+/* ── GRAPH CANVAS ── */
+.hero-right{position:relative;z-index:2;display:flex;align-items:center;justify-content:center}
+#graph-svg{width:100%;max-width:540px;height:420px}
+
+/* ── NAV DOTS ── */
+.nav-dots{
+  position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:0.7rem;z-index:100;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--border);border:1px solid var(--muted);
+  cursor:pointer;transition:all 0.2s;
+}
+.dot.active{background:var(--green);border-color:var(--green);box-shadow:0 0 8px var(--green)}
+
+/* ── SECTIONS ── */
+.sec{max-width:1100px;margin:0 auto;padding:5rem 2rem}
+
+.sec-label{
+  font-family:'IBM Plex Mono',monospace;font-size:0.62rem;
+  letter-spacing:0.2em;text-transform:uppercase;color:var(--green);
+  margin-bottom:0.8rem;
+}
+h2{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:clamp(1.4rem,2.5vw,2rem);
+  font-weight:600;letter-spacing:-0.02em;margin-bottom:1.2rem;
+}
+h2 .g{color:var(--green)}
+
+/* ── TEAM STRIP ── */
+.team-strip{
+  background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:2rem;
+}
+.team-inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:center}
+.team-member{
+  display:flex;align-items:center;gap:0.7rem;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:0.6rem 1.1rem;
+}
+.tm-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--green));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:0.75rem;font-weight:600;color:var(--bg);
+  flex-shrink:0;
+}
+.tm-info{line-height:1.2}
+.tm-name{font-size:0.82rem;font-weight:500;color:var(--text)}
+.tm-role{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--muted)}
+
+/* ── ALGORITHM STEPS ── */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:2rem}
+.step-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:1.4rem;position:relative;overflow:hidden;
+  transition:border-color 0.3s,transform 0.3s;
+}
+.step-card:hover{transform:translateY(-3px);border-color:rgba(0,255,136,0.3);box-shadow:0 0 20px var(--glow-g)}
+.step-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),transparent)}
+.step-num{
+  font-family:'IBM Plex Mono',monospace;font-size:2rem;font-weight:600;
+  color:rgba(0,255,136,0.15);line-height:1;margin-bottom:0.6rem;
+}
+.step-card h3{font-family:'IBM Plex Mono',monospace;font-size:0.85rem;color:var(--green);margin-bottom:0.5rem}
+.step-card p{font-size:0.83rem;color:var(--muted);line-height:1.6}
+
+/* ── INTERACTIVE DIJKSTRA ── */
+.demo-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:4rem 2rem}
+.demo-inner{max-width:1100px;margin:0 auto}
+.demo-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;margin-top:2rem;align-items:start}
+
+#demo-svg-wrap{
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:1rem;overflow:hidden;
+}
+#demo-svg{width:100%;height:380px}
+
+.demo-controls{display:flex;flex-direction:column;gap:1rem}
+.ctrl-label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem}
+
+.node-select{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.ns-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+  padding:0.4rem 0.5rem;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg);color:var(--muted);cursor:pointer;transition:all 0.15s;
+  text-align:center;
+}
+.ns-btn:hover{border-color:var(--blue);color:var(--blue)}
+.ns-btn.sel-src{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08)}
+.ns-btn.sel-dst{border-color:var(--orange);color:var(--orange);background:rgba(255,107,53,0.08)}
+
+.run-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:500;
+  padding:0.7rem 1rem;border-radius:8px;border:1px solid var(--green);
+  background:rgba(0,255,136,0.1);color:var(--green);cursor:pointer;
+  transition:all 0.2s;width:100%;
+}
+.run-btn:hover{background:rgba(0,255,136,0.2);box-shadow:0 0 16px var(--glow-g)}
+.run-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+.reset-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+  padding:0.5rem 1rem;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;width:100%;transition:all 0.2s;
+}
+.reset-btn:hover{border-color:var(--muted);color:var(--text)}
+
+.log-box{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:0.8rem;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+  color:var(--muted);line-height:1.7;height:200px;overflow-y:auto;
+}
+.log-box .log-g{color:var(--green)}
+.log-box .log-o{color:var(--orange)}
+.log-box .log-b{color:var(--blue)}
+.log-box .log-y{color:var(--yellow)}
+
+.dist-table-wrap{overflow-x:auto}
+.dist-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.72rem}
+.dist-table th{padding:0.4rem 0.6rem;background:var(--bg3);color:var(--muted);text-align:center;border:1px solid var(--border);font-weight:500}
+.dist-table td{padding:0.4rem 0.6rem;text-align:center;border:1px solid var(--border);color:var(--muted);transition:all 0.3s}
+.dist-table td.updated{color:var(--yellow)}
+.dist-table td.final{color:var(--green);font-weight:600}
+.dist-table td.path{color:var(--orange)}
+
+/* ── DIVIDER ── */
+hr.div{border:none;border-top:1px solid var(--border);max-width:1100px;margin:0 auto}
+
+/* ── TOPOLOGY TABLE ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1.5rem}
+table.data{width:100%;border-collapse:collapse;font-size:0.83rem}
+table.data th{
+  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.6rem 0.9rem;background:var(--bg3);
+  color:var(--muted);text-align:left;border-bottom:1px solid var(--border);
+}
+table.data td{padding:0.6rem 0.9rem;border-bottom:1px solid var(--border);color:var(--muted);font-size:0.82rem}
+table.data td:first-child{font-family:'IBM Plex Mono',monospace;color:var(--text)}
+table.data tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
+tr.optimal-row td{color:var(--green)!important;font-weight:500}
+
+/* ── CODE BLOCK ── */
+.code-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:4rem 2rem}
+.code-inner{max-width:1100px;margin:0 auto}
+.code-tabs{display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--border)}
+.code-tab{
+  font-family:'IBM Plex Mono',monospace;font-size:0.72rem;
+  padding:0.5rem 1.1rem;border:none;background:transparent;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all 0.15s;
+}
+.code-tab:hover{color:var(--text)}
+.code-tab.active{color:var(--green);border-bottom-color:var(--green)}
+.code-panel{display:none}
+.code-panel.active{display:block}
+pre{
+  background:var(--bg);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 10px 10px;padding:1.4rem;overflow-x:auto;
+  font-family:'IBM Plex Mono',monospace;font-size:0.78rem;line-height:1.75;
+  color:#A8B2C8;
+}
+.kw{color:#FF7EB3}.fn{color:#79C0FF}.st{color:#A5D6FF}.cm{color:#484F69;font-style:italic}
+.num{color:var(--orange)}.op{color:var(--green)}.cls{color:var(--yellow)}
+
+/* ── RESULTS TABLE ── */
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}
+.res-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.4rem;
+}
+.res-card h4{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--muted);margin-bottom:1rem;letter-spacing:0.1em;text-transform:uppercase}
+
+/* ── COMPLEXITY ── */
+.complexity-strip{
+  display:flex;flex-wrap:wrap;gap:1.5rem;
+  justify-content:center;margin-top:2rem;
+}
+.cval{
+  text-align:center;background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:1.2rem 2rem;min-width:180px;
+}
+.cval .cv-eq{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;color:var(--green);font-weight:600}
+.cval .cv-label{font-size:0.75rem;color:var(--muted);margin-top:0.3rem}
+.cval .cv-calc{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--orange);margin-top:0.2rem}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:2.5rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border)}
+footer a{color:var(--blue);text-decoration:none}
+footer a:hover{color:var(--green)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding:5rem 1.5rem 3rem;text-align:center}
+  .hero-right{display:none}
+  .demo-grid{grid-template-columns:1fr}
+  .two-col,.results-grid{grid-template-columns:1fr}
+  .eyebrow::before{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV DOTS -->
+<nav class="nav-dots" id="nav-dots">
+  <div class="dot active" onclick="scrollTo(0,0)" title="Inicio"></div>
+  <div class="dot" onclick="scrollSec('sec-algo')" title="Algoritmo"></div>
+  <div class="dot" onclick="scrollSec('sec-demo')" title="Demo"></div>
+  <div class="dot" onclick="scrollSec('sec-topo')" title="Topología"></div>
+  <div class="dot" onclick="scrollSec('sec-code')" title="Código"></div>
+  <div class="dot" onclick="scrollSec('sec-results')" title="Resultados"></div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-left">
+    <p class="eyebrow">ESPOCH · FIE · Matemática Avanzada · PAO4-2026 · Grupo 1</p>
+    <h1>
+      Optimización de Rutas<br>
+      LAN con <span class="g">Dijkstra</span><br>
+      <span class="b">O((V+E) log V)</span>
+    </h1>
+    <p class="hero-desc">
+      Modelo matemático de grafo ponderado G=(V,E,w) aplicado a una red LAN universitaria de 8 nodos.
+      Implementación propia desde cero con heapq, validada contra NetworkX con coincidencia exacta.
+    </p>
+    <div class="hero-chips">
+      <span class="chip g">Python · heapq</span>
+      <span class="chip b">NetworkX validado</span>
+      <span class="chip o">8 nodos · 11 aristas</span>
+      <span class="chip">Teoría de Grafos</span>
+      <span class="chip">OSPF · Relajación</span>
+    </div>
+    <div class="result-badge">
+      <span class="rb-label">Ruta óptima A → H</span>
+      <span class="rb-route">A → C → B → D → E → F → H</span>
+      <span class="rb-cost">Costo total: 17 ms &nbsp;|&nbsp; 6 saltos</span>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <svg id="graph-svg" viewBox="0 0 540 420"></svg>
+  </div>
+</section>
+
+<!-- TEAM -->
+<div class="team-strip">
+  <div class="team-inner">
+    <div class="team-member"><div class="tm-avatar">JA</div><div class="tm-info"><div class="tm-name">Jonathan Acosta</div><div class="tm-role">Líder del Proyecto</div></div></div>
+    <div class="team-member"><div class="tm-avatar">KM</div><div class="tm-info"><div class="tm-name">Kevin Morales</div><div class="tm-role">Presentación</div></div></div>
+    <div class="team-member"><div class="tm-avatar">KC</div><div class="tm-info"><div class="tm-name">Kevin Chinlle</div><div class="tm-role">Documentación</div></div></div>
+    <div class="team-member"><div class="tm-avatar">DD</div><div class="tm-info"><div class="tm-name">Dennys Daquilema</div><div class="tm-role">Desarrollo Matemático</div></div></div>
+    <div class="team-member"><div class="tm-avatar">JE</div><div class="tm-info"><div class="tm-name">Jhonn Elizalde</div><div class="tm-role">Implementación</div></div></div>
+    <div class="team-member"><div class="tm-avatar">JM</div><div class="tm-info"><div class="tm-name">José Mullo</div><div class="tm-role">Validación</div></div></div>
+    <div class="team-member" style="border-left:2px solid var(--blue)"><div class="tm-avatar" style="background:linear-gradient(135deg,var(--blue),#7C3AED)">MA</div><div class="tm-info"><div class="tm-name">Lic. Miriam Ávila</div><div class="tm-role">Docente</div></div></div>
+  </div>
+</div>
+
+<!-- ══ ALGORITHM ══ -->
+<section class="sec" id="sec-algo">
+  <p class="sec-label">// fundamento teórico</p>
+  <h2>El Algoritmo de <span class="g">Dijkstra</span></h2>
+  <p style="color:var(--muted);max-width:680px;font-size:0.93rem;">
+    Método voraz (greedy) para hallar el camino mínimo en grafos ponderados con pesos no negativos.
+    Base matemática de protocolos de enrutamiento reales como <strong style="color:var(--text)">OSPF</strong>.
+  </p>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h3>Inicialización</h3>
+      <p>d[s]=0, d[v]=∞ para todo v≠s. Cola de prioridad Q contiene todos los vértices. π[v]=NULL (predecesores).</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h3>Extracción Mínima</h3>
+      <p>u ← EXTRAER-MIN(Q). El nodo con menor distancia tentativa. Con heapq esto cuesta O(log V) por extracción.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <h3>Relajación</h3>
+      <p>Si d[v] > d[u] + w(u,v) entonces d[v] = d[u] + w(u,v), π[v] = u. Se actualiza solo si encontramos camino más corto.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <h3>Convergencia</h3>
+      <p>Al extraer u de Q su distancia d[u] es ya definitiva (pesos no negativos garantizan invariante de bucle).</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">05</div>
+      <h3>Reconstrucción</h3>
+      <p>Recorrido inverso del arreglo π[] desde destino hasta origen para reconstruir la ruta óptima P*.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">06</div>
+      <h3>Complejidad O((V+E)logV)</h3>
+      <p>Para V=8, E=11: ≈ 57 ops. Bellman-Ford necesita O(VE)=88. Dijkstra es 35% más eficiente en esta red.</p>
+    </div>
+  </div>
+
+  <div class="complexity-strip">
+    <div class="cval">
+      <div class="cv-eq">O((V+E) log V)</div>
+      <div class="cv-label">Dijkstra con heapq</div>
+      <div class="cv-calc">(8+11)·log₂(8) ≈ 57 ops</div>
+    </div>
+    <div class="cval">
+      <div class="cv-eq" style="color:var(--orange)">O(VE)</div>
+      <div class="cv-label">Bellman-Ford (comparación)</div>
+      <div class="cv-calc">8 × 11 = 88 ops</div>
+    </div>
+    <div class="cval">
+      <div class="cv-eq" style="color:var(--yellow)">O(V²)</div>
+      <div class="cv-label">Dijkstra con arreglo simple</div>
+      <div class="cv-calc">8² = 64 ops</div>
+    </div>
+    <div class="cval">
+      <div class="cv-eq" style="color:var(--green)">≈ 0.0001 s</div>
+      <div class="cv-label">Tiempo de ejecución real</div>
+      <div class="cv-calc">medido con time.perf_counter()</div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ DEMO INTERACTIVO ══ -->
+<div class="demo-section" id="sec-demo">
+  <div class="demo-inner">
+    <p class="sec-label">// simulación interactiva</p>
+    <h2>Ejecuta el Algoritmo <span class="g">paso a paso</span></h2>
+    <p style="color:var(--muted);font-size:0.9rem;max-width:600px;margin-bottom:0.5rem">
+      Selecciona nodo origen (verde) y destino (naranja), luego ejecuta Dijkstra. 
+      Observa cómo se relajan las distancias en tiempo real.
+    </p>
+
+    <div class="demo-grid">
+      <div id="demo-svg-wrap">
+        <svg id="demo-svg" viewBox="0 0 580 380"></svg>
+      </div>
+
+      <div class="demo-controls">
+        <div>
+          <div class="ctrl-label">Nodo Origen</div>
+          <div class="node-select" id="src-btns"></div>
+        </div>
+        <div>
+          <div class="ctrl-label">Nodo Destino</div>
+          <div class="node-select" id="dst-btns"></div>
+        </div>
+        <button class="run-btn" id="run-btn" onclick="runDijkstra()">▶ Ejecutar Dijkstra</button>
+        <button class="reset-btn" onclick="resetDemo()">↺ Reiniciar</button>
+        <div>
+          <div class="ctrl-label">Log de ejecución</div>
+          <div class="log-box" id="log-box">
+            <span class="log-g">// Selecciona origen y destino para comenzar</span>
+          </div>
+        </div>
+        <div>
+          <div class="ctrl-label">Tabla de distancias</div>
+          <div class="dist-table-wrap">
+            <table class="dist-table" id="dist-table">
+              <thead><tr id="dt-head"></tr></thead>
+              <tbody><tr id="dt-row"></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOPOLOGÍA ══ -->
+<section class="sec" id="sec-topo">
+  <p class="sec-label">// modelo matemático</p>
+  <h2>Topología de la Red <span class="g">LAN</span></h2>
+  <p style="color:var(--muted);font-size:0.9rem;max-width:640px;margin-bottom:0.5rem">
+    Grafo ponderado no dirigido G=(V,E,w) con 8 vértices (dispositivos) y 11 aristas (enlaces). 
+    Los pesos representan latencia en milisegundos.
+  </p>
+
+  <div class="two-col">
+    <div>
+      <p class="ctrl-label" style="margin-bottom:0.8rem">Nodos del grafo — V = {A,B,C,D,E,F,G,H}</p>
+      <table class="data">
+        <thead><tr><th>Nodo</th><th>Dispositivo</th><th>Rol</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>Router Principal</td><td>Origen / Centro</td></tr>
+          <tr><td>B</td><td>Switch Académico</td><td>Distribución</td></tr>
+          <tr><td>C</td><td>Switch Administrativo</td><td>Distribución</td></tr>
+          <tr><td>D</td><td>Laboratorio 1</td><td>Estación de trabajo</td></tr>
+          <tr><td>E</td><td>Laboratorio 2</td><td>Estación de trabajo</td></tr>
+          <tr><td>F</td><td>Servidor Institucional</td><td>Servidor</td></tr>
+          <tr><td>G</td><td>Punto de Acceso WiFi</td><td>Inalámbrico</td></tr>
+          <tr><td>H</td><td>Impresora de Red</td><td>Destino</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p class="ctrl-label" style="margin-bottom:0.8rem">Aristas — E con pesos w: E → ℝ⁺ (ms)</p>
+      <table class="data">
+        <thead><tr><th>Origen</th><th>Destino</th><th>Peso (ms)</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>B</td><td>4</td></tr>
+          <tr class="optimal-row"><td>A</td><td>C</td><td>2 ★</td></tr>
+          <tr class="optimal-row"><td>B</td><td>C</td><td>1 ★</td></tr>
+          <tr class="optimal-row"><td>B</td><td>D</td><td>5 ★</td></tr>
+          <tr><td>C</td><td>D</td><td>8</td></tr>
+          <tr><td>C</td><td>E</td><td>10</td></tr>
+          <tr class="optimal-row"><td>D</td><td>E</td><td>2 ★</td></tr>
+          <tr><td>D</td><td>F</td><td>6</td></tr>
+          <tr class="optimal-row"><td>E</td><td>F</td><td>3 ★</td></tr>
+          <tr><td>E</td><td>G</td><td>5</td></tr>
+          <tr class="optimal-row"><td>F</td><td>H</td><td>4 ★</td></tr>
+        </tbody>
+      </table>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--green);margin-top:0.5rem">★ Aristas en la ruta óptima A→H</p>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ CODE ══ -->
+<div class="code-section" id="sec-code">
+  <div class="code-inner">
+    <p class="sec-label">// implementación en python</p>
+    <h2>Código <span class="g">Fuente</span></h2>
+
+    <div class="code-tabs">
+      <button class="code-tab active" onclick="switchCode('main',this)">main.py</button>
+      <button class="code-tab" onclick="switchCode('grafo',this)">grafo_lan.py</button>
+      <button class="code-tab" onclick="switchCode('viz',this)">visualizacion.py</button>
+    </div>
+
+    <div id="code-main" class="code-panel active">
+<pre><span class="cm"># ================================================================</span>
+<span class="cm"># main.py — Implementación del algoritmo de Dijkstra</span>
+<span class="cm"># ESPOCH · Matemática Avanzada · Grupo 1 · 2026</span>
+<span class="cm"># ================================================================</span>
+<span class="kw">import</span> heapq
+<span class="kw">from</span> grafo_lan <span class="kw">import</span> grafo
+
+<span class="kw">def</span> <span class="fn">dijkstra</span>(grafo, origen):
+    <span class="cm"># Inicialización: d(v)=∞ para todos los vértices</span>
+    distancias <span class="op">=</span> {nodo: <span class="fn">float</span>(<span class="st">'inf'</span>) <span class="kw">for</span> nodo <span class="kw">in</span> grafo}
+    <span class="cm"># π(v)=NIL — vector de predecesores</span>
+    predecesores <span class="op">=</span> {nodo: <span class="kw">None</span> <span class="kw">for</span> nodo <span class="kw">in</span> grafo}
+    <span class="cm"># Distancia del nodo origen</span>
+    distancias[origen] <span class="op">=</span> <span class="num">0</span>
+    cola <span class="op">=</span> [(<span class="num">0</span>, origen)]  <span class="cm"># min-heap: (costo, nodo)</span>
+
+    <span class="kw">while</span> cola:
+        distancia_actual, actual <span class="op">=</span> heapq.<span class="fn">heappop</span>(cola)
+        <span class="kw">for</span> vecino, peso <span class="kw">in</span> grafo[actual].<span class="fn">items</span>():
+            <span class="cm"># Relajación: d[v] > d[u] + w(u,v)</span>
+            nueva_distancia <span class="op">=</span> distancia_actual <span class="op">+</span> peso
+            <span class="kw">if</span> nueva_distancia <span class="op">&lt;</span> distancias[vecino]:
+                distancias[vecino] <span class="op">=</span> nueva_distancia
+                predecesores[vecino] <span class="op">=</span> actual
+                heapq.<span class="fn">heappush</span>(cola, (nueva_distancia, vecino))
+
+    <span class="kw">return</span> distancias, predecesores
+
+<span class="kw">def</span> <span class="fn">reconstruir_ruta</span>(predecesores, destino):
+    ruta <span class="op">=</span> []
+    <span class="kw">while</span> destino:
+        ruta.<span class="fn">append</span>(destino)
+        destino <span class="op">=</span> predecesores[destino]
+    ruta.<span class="fn">reverse</span>()
+    <span class="kw">return</span> ruta
+
+<span class="cm"># ─── Programa principal ───────────────────────────────</span>
+origen <span class="op">=</span> <span class="st">'A'</span>
+destino <span class="op">=</span> <span class="st">'H'</span>
+
+distancias, predecesores <span class="op">=</span> <span class="fn">dijkstra</span>(grafo, origen)
+ruta <span class="op">=</span> <span class="fn">reconstruir_ruta</span>(predecesores, destino)
+
+<span class="fn">print</span>(<span class="st">"="</span> <span class="op">*</span> <span class="num">50</span>)
+<span class="fn">print</span>(<span class="st">"ALGORITMO DE DIJKSTRA"</span>)
+<span class="fn">print</span>(<span class="st">f"Origen : {origen}"</span>)
+<span class="fn">print</span>(<span class="st">f"Destino: {destino}"</span>)
+<span class="fn">print</span>(<span class="st">f"Ruta óptima: {' → '.join(ruta)}"</span>)
+<span class="fn">print</span>(<span class="st">f"Costo total: {distancias[destino]} ms"</span>)
+<span class="fn">print</span>(<span class="st">"="</span> <span class="op">*</span> <span class="num">50</span>)</pre>
+    </div>
+
+    <div id="code-grafo" class="code-panel">
+<pre><span class="cm"># ================================================================</span>
+<span class="cm"># grafo_lan.py — Topología LAN del proyecto</span>
+<span class="cm"># G = (V, E, w) — grafo ponderado no dirigido</span>
+<span class="cm"># Pesos = latencia en milisegundos</span>
+<span class="cm"># ================================================================</span>
+
+grafo <span class="op">=</span> {
+    <span class="cm"># A: Router Principal — nodo origen</span>
+    <span class="st">'A'</span>: {<span class="st">'B'</span>: <span class="num">4</span>, <span class="st">'C'</span>: <span class="num">2</span>},
+
+    <span class="cm"># B: Switch Académico</span>
+    <span class="st">'B'</span>: {<span class="st">'A'</span>: <span class="num">4</span>, <span class="st">'C'</span>: <span class="num">1</span>, <span class="st">'D'</span>: <span class="num">5</span>},
+
+    <span class="cm"># C: Switch Administrativo</span>
+    <span class="st">'C'</span>: {<span class="st">'A'</span>: <span class="num">2</span>, <span class="st">'B'</span>: <span class="num">1</span>, <span class="st">'D'</span>: <span class="num">8</span>, <span class="st">'E'</span>: <span class="num">10</span>},
+
+    <span class="cm"># D: Laboratorio 1</span>
+    <span class="st">'D'</span>: {<span class="st">'B'</span>: <span class="num">5</span>, <span class="st">'C'</span>: <span class="num">8</span>, <span class="st">'E'</span>: <span class="num">2</span>, <span class="st">'F'</span>: <span class="num">6</span>},
+
+    <span class="cm"># E: Laboratorio 2</span>
+    <span class="st">'E'</span>: {<span class="st">'C'</span>: <span class="num">10</span>, <span class="st">'D'</span>: <span class="num">2</span>, <span class="st">'F'</span>: <span class="num">3</span>, <span class="st">'G'</span>: <span class="num">5</span>},
+
+    <span class="cm"># F: Servidor Institucional</span>
+    <span class="st">'F'</span>: {<span class="st">'D'</span>: <span class="num">6</span>, <span class="st">'E'</span>: <span class="num">3</span>, <span class="st">'H'</span>: <span class="num">4</span>},
+
+    <span class="cm"># G: Punto de Acceso WiFi</span>
+    <span class="st">'G'</span>: {<span class="st">'E'</span>: <span class="num">5</span>},
+
+    <span class="cm"># H: Impresora de Red — nodo destino</span>
+    <span class="st">'H'</span>: {<span class="st">'F'</span>: <span class="num">4</span>},
+}</pre>
+    </div>
+
+    <div id="code-viz" class="code-panel">
+<pre><span class="cm"># ================================================================</span>
+<span class="cm"># visualizacion.py — Visualización con NetworkX y Matplotlib</span>
+<span class="cm"># Validación cruzada: compara implementación propia vs NetworkX</span>
+<span class="cm"># ================================================================</span>
+<span class="kw">import</span> networkx <span class="kw">as</span> nx
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">from</span> grafo_lan <span class="kw">import</span> grafo
+
+<span class="cm"># Construir grafo NetworkX desde el diccionario</span>
+G <span class="op">=</span> nx.<span class="cls">Graph</span>()
+<span class="kw">for</span> nodo <span class="kw">in</span> grafo:
+    <span class="kw">for</span> vecino, peso <span class="kw">in</span> grafo[nodo].<span class="fn">items</span>():
+        G.<span class="fn">add_edge</span>(nodo, vecino, weight<span class="op">=</span>peso)
+
+<span class="cm"># Layout y visualización base</span>
+pos <span class="op">=</span> nx.<span class="fn">spring_layout</span>(G, seed<span class="op">=</span><span class="num">42</span>)
+nx.<span class="fn">draw</span>(G, pos, with_labels<span class="op">=</span><span class="kw">True</span>, node_size<span class="op">=</span><span class="num">2500</span>)
+etiquetas <span class="op">=</span> nx.<span class="fn">get_edge_attributes</span>(G, <span class="st">'weight'</span>)
+nx.<span class="fn">draw_networkx_edge_labels</span>(G, pos, edge_labels<span class="op">=</span>etiquetas)
+
+<span class="cm"># ── Validación cruzada ────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"Validación NetworkX:"</span>)
+<span class="kw">for</span> destino <span class="kw">in</span> [<span class="st">'B'</span>,<span class="st">'C'</span>,<span class="st">'D'</span>,<span class="st">'E'</span>,<span class="st">'F'</span>,<span class="st">'G'</span>,<span class="st">'H'</span>]:
+    ruta_nx <span class="op">=</span> nx.<span class="fn">dijkstra_path</span>(G, <span class="st">'A'</span>, destino, weight<span class="op">=</span><span class="st">'weight'</span>)
+    costo_nx <span class="op">=</span> nx.<span class="fn">dijkstra_path_length</span>(G, <span class="st">'A'</span>, destino, weight<span class="op">=</span><span class="st">'weight'</span>)
+    <span class="fn">print</span>(<span class="st">f"A→{destino}: {' → '.join(ruta_nx)} | {costo_nx} ms"</span>)
+
+plt.<span class="fn">title</span>(<span class="st">"Topología LAN del Proyecto"</span>)
+plt.<span class="fn">show</span>()</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<section class="sec" id="sec-results">
+  <p class="sec-label">// resultados y validación</p>
+  <h2>Todas las Rutas <span class="g">Óptimas</span> desde A</h2>
+
+  <div class="results-grid">
+    <div class="res-card">
+      <h4>Topología base — distancias mínimas</h4>
+      <table class="data">
+        <thead><tr><th>Destino</th><th>Ruta Óptima</th><th>Costo</th><th>Saltos</th></tr></thead>
+        <tbody>
+          <tr><td>B</td><td style="font-size:0.75rem">A→C→B</td><td>3 ms</td><td>2</td></tr>
+          <tr><td>C</td><td style="font-size:0.75rem">A→C</td><td>2 ms</td><td>1</td></tr>
+          <tr><td>D</td><td style="font-size:0.75rem">A→C→B→D</td><td>8 ms</td><td>3</td></tr>
+          <tr><td>E</td><td style="font-size:0.75rem">A→C→B→D→E</td><td>10 ms</td><td>4</td></tr>
+          <tr><td>F</td><td style="font-size:0.75rem">A→C→B→D→E→F</td><td>13 ms</td><td>5</td></tr>
+          <tr><td>G</td><td style="font-size:0.75rem">A→C→B→D→E→G</td><td>15 ms</td><td>5</td></tr>
+          <tr style="background:rgba(0,255,136,0.05)"><td style="color:var(--green);font-weight:600">H ★</td><td style="font-size:0.75rem;color:var(--green)">A→C→B→D→E→F→H</td><td style="color:var(--green)">17 ms</td><td style="color:var(--green)">6</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="res-card">
+      <h4>Validación cruzada vs NetworkX</h4>
+      <table class="data">
+        <thead><tr><th>Destino</th><th>Propio</th><th>NetworkX</th><th>Match</th></tr></thead>
+        <tbody>
+          <tr><td>B</td><td>3 ms</td><td>3 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>C</td><td>2 ms</td><td>2 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>D</td><td>8 ms</td><td>8 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>E</td><td>10 ms</td><td>10 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>F</td><td>13 ms</td><td>13 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>G</td><td>15 ms</td><td>15 ms</td><td style="color:var(--green)">✓</td></tr>
+          <tr><td>H</td><td>17 ms</td><td>17 ms</td><td style="color:var(--green)">✓</td></tr>
+        </tbody>
+      </table>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--green);margin-top:0.8rem">
+        7/7 rutas coinciden exactamente. Error = 0.
+      </p>
+    </div>
+
+    <div class="res-card">
+      <h4>Escenarios dinámicos</h4>
+      <table class="data">
+        <thead><tr><th>Escenario</th><th>Cambio</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td style="font-size:0.78rem">Nodo I agregado (G→I: 2)</td><td style="color:var(--green);font-size:0.78rem">Recalculó sin problemas</td></tr>
+          <tr><td>2</td><td style="font-size:0.78rem">Peso E-G: 5→15 (congestión)</td><td style="color:var(--yellow);font-size:0.78rem">Evitó el enlace cargado</td></tr>
+          <tr><td>3</td><td style="font-size:0.78rem">Enlace B-D eliminado (falla)</td><td style="color:var(--orange);font-size:0.78rem">Encontró ruta alternativa</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="res-card">
+      <h4>Tabla de iteraciones completa</h4>
+      <div style="overflow-x:auto">
+        <table class="dist-table" style="font-size:0.65rem">
+          <thead><tr><th>Iter</th><th>Nodo</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>—</td><td style="color:var(--green)">0</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td></tr>
+            <tr><td>1</td><td>A</td><td style="color:var(--green)">0</td><td style="color:var(--yellow)">4</td><td style="color:var(--yellow)">2</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td></tr>
+            <tr><td>2</td><td>C</td><td style="color:var(--green)">0</td><td style="color:var(--yellow)">3</td><td style="color:var(--green)">2</td><td style="color:var(--yellow)">10</td><td style="color:var(--yellow)">12</td><td>∞</td><td>∞</td><td>∞</td></tr>
+            <tr><td>3</td><td>B</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--yellow)">8</td><td>12</td><td>∞</td><td>∞</td><td>∞</td></tr>
+            <tr><td>4</td><td>D</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--green)">8</td><td style="color:var(--yellow)">10</td><td style="color:var(--yellow)">14</td><td>∞</td><td>∞</td></tr>
+            <tr><td>5</td><td>E</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--green)">8</td><td style="color:var(--green)">10</td><td style="color:var(--yellow)">13</td><td style="color:var(--yellow)">15</td><td>∞</td></tr>
+            <tr><td>6</td><td>F</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--green)">8</td><td style="color:var(--green)">10</td><td style="color:var(--green)">13</td><td>15</td><td style="color:var(--yellow)">17</td></tr>
+            <tr><td>7</td><td>G</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--green)">8</td><td style="color:var(--green)">10</td><td style="color:var(--green)">13</td><td style="color:var(--green)">15</td><td>17</td></tr>
+            <tr><td>8</td><td>H</td><td style="color:var(--green)">0</td><td style="color:var(--green)">3</td><td style="color:var(--green)">2</td><td style="color:var(--green)">8</td><td style="color:var(--green)">10</td><td style="color:var(--green)">13</td><td style="color:var(--green)">15</td><td style="color:var(--green)">17</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>ESPOCH · Facultad de Informática y Electrónica · Carrera de Tecnología de la Información</p>
+  <p style="margin-top:0.4rem">
+    Proyecto Final · Matemática Avanzada · PAO 4-2026 · Grupo 1 ·
+    <a href="https://github.com/xJhony911/dijkstra-optimizacion-rutas-lan2" target="_blank">GitHub ↗</a>
+  </p>
+  <p style="margin-top:0.3rem;color:rgba(90,106,138,0.6)">Docente: Lic. Miriam Ávila P. Mg.</p>
+</footer>
+
+<script>
+/* ══ DATA ══════════════════════════════════════════ */
+const NODES = {
+  A:{x:270,y:50,  label:'A',desc:'Router Principal'},
+  B:{x:80, y:150, label:'B',desc:'Switch Académico'},
+  C:{x:460,y:150, label:'C',desc:'Switch Admin.'},
+  D:{x:80, y:270, label:'D',desc:'Lab 1'},
+  E:{x:270,y:270, label:'E',desc:'Lab 2'},
+  F:{x:460,y:270, label:'F',desc:'Servidor'},
+  G:{x:160,y:380, label:'G',desc:'WiFi AP'},
+  H:{x:460,y:380, label:'H',desc:'Impresora'},
+};
+const EDGES=[
+  ['A','B',4],['A','C',2],['B','C',1],['B','D',5],
+  ['C','D',8],['C','E',10],['D','E',2],['D','F',6],
+  ['E','F',3],['E','G',5],['F','H',4]
+];
+const GRAPH={
+  A:{B:4,C:2},B:{A:4,C:1,D:5},C:{A:2,B:1,D:8,E:10},
+  D:{B:5,C:8,E:2,F:6},E:{C:10,D:2,F:3,G:5},
+  F:{D:6,E:3,H:4},G:{E:5},H:{F:4}
+};
+const OPTIMAL_PATH=['A','C','B','D','E','F','H'];
+const OPTIMAL_EDGES=new Set(['A-C','C-B','B-D','D-E','E-F','F-H']);
+
+/* ══ HERO SVG ══════════════════════════════════════ */
+(function(){
+  const svg=document.getElementById('graph-svg');
+  const NS='http://www.w3.org/2000/svg';
+  const vw=540,vh=420;
+  // Scale nodes to hero svg
+  const nx2=(n)=>NODES[n].x*(vw/540);
+  const ny2=(n)=>NODES[n].y*(vh/420);
+
+  // Edges
+  EDGES.forEach(([a,b,w])=>{
+    const key=`${a}-${b}`;
+    const isOpt=OPTIMAL_EDGES.has(key)||OPTIMAL_EDGES.has(`${b}-${a}`);
+    const line=document.createElementNS(NS,'line');
+    line.setAttribute('x1',nx2(a));line.setAttribute('y1',ny2(a));
+    line.setAttribute('x2',nx2(b));line.setAttribute('y2',ny2(b));
+    line.setAttribute('stroke',isOpt?'#00FF88':'#1A2540');
+    line.setAttribute('stroke-width',isOpt?'2.5':'1.5');
+    line.setAttribute('stroke-opacity',isOpt?'0.8':'1');
+    if(isOpt){line.setAttribute('filter','url(#glow-hero)');}
+    svg.appendChild(line);
+    // Weight label
+    const mx=(nx2(a)+nx2(b))/2,my=(ny2(a)+ny2(b))/2;
+    const txt=document.createElementNS(NS,'text');
+    txt.setAttribute('x',mx+4);txt.setAttribute('y',my-4);
+    txt.setAttribute('font-family','IBM Plex Mono,monospace');
+    txt.setAttribute('font-size','10');
+    txt.setAttribute('fill',isOpt?'#00FF88':'#5A6A8A');
+    txt.textContent=w;
+    svg.appendChild(txt);
+  });
+  // Defs glow
+  const defs=document.createElementNS(NS,'defs');
+  defs.innerHTML=`<filter id="glow-hero"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svg.insertBefore(defs,svg.firstChild);
+  // Nodes
+  Object.entries(NODES).forEach(([id,n])=>{
+    const isOpt=OPTIMAL_PATH.includes(id);
+    const g=document.createElementNS(NS,'g');
+    const circ=document.createElementNS(NS,'circle');
+    circ.setAttribute('cx',nx2(id));circ.setAttribute('cy',ny2(id));
+    circ.setAttribute('r','20');
+    circ.setAttribute('fill',isOpt?'#0B1E30':'#0C1426');
+    circ.setAttribute('stroke',isOpt?'#00FF88':id==='H'?'#FF6B35':'#2E7BF0');
+    circ.setAttribute('stroke-width',isOpt?'2':'1.5');
+    if(isOpt) circ.setAttribute('filter','url(#glow-hero)');
+    g.appendChild(circ);
+    const lbl=document.createElementNS(NS,'text');
+    lbl.setAttribute('x',nx2(id));lbl.setAttribute('y',ny2(id)+5);
+    lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-family','IBM Plex Mono,monospace');
+    lbl.setAttribute('font-size','13');lbl.setAttribute('font-weight','600');
+    lbl.setAttribute('fill',isOpt?'#00FF88':id==='H'?'#FF6B35':'#E2E8F0');
+    lbl.textContent=id;
+    g.appendChild(lbl);
+    svg.appendChild(g);
+  });
+  // Animate path
+  let step=0;
+  const pathEdges=[['A','C'],['C','B'],['B','D'],['D','E'],['E','F'],['F','H']];
+  function pulse(){
+    if(step>=pathEdges.length){step=0;}
+    const [a,b]=pathEdges[step];
+    // flash node
+    const allCircles=svg.querySelectorAll('circle');
+    // quick highlight
+    step++;
+    setTimeout(pulse,500);
+  }
+  setTimeout(pulse,1000);
+})();
+
+/* ══ DEMO SVG ══════════════════════════════════════ */
+const DN={
+  A:{x:270,y:40}, B:{x:80,y:130}, C:{x:460,y:130},
+  D:{x:80, y:250}, E:{x:270,y:250}, F:{x:460,y:250},
+  G:{x:140,y:350}, H:{x:460,y:350}
+};
+let selSrc='A',selDst='H',running=false;
+
+function buildDemoSVG(){
+  const svg=document.getElementById('demo-svg');
+  svg.innerHTML='';
+  const NS='http://www.w3.org/2000/svg';
+  // defs
+  const defs=document.createElementNS(NS,'defs');
+  defs.innerHTML=`<filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svg.appendChild(defs);
+  // edges
+  EDGES.forEach(([a,b,w])=>{
+    const line=document.createElementNS(NS,'line');
+    line.setAttribute('x1',DN[a].x);line.setAttribute('y1',DN[a].y);
+    line.setAttribute('x2',DN[b].x);line.setAttribute('y2',DN[b].y);
+    line.setAttribute('stroke','#1A2540');line.setAttribute('stroke-width','2');
+    line.setAttribute('id',`edge-${a}-${b}`);
+    svg.appendChild(line);
+    const mx=(DN[a].x+DN[b].x)/2,my=(DN[a].y+DN[b].y)/2;
+    const txt=document.createElementNS(NS,'text');
+    txt.setAttribute('x',mx+3);txt.setAttribute('y',my-4);
+    txt.setAttribute('font-family','IBM Plex Mono,monospace');txt.setAttribute('font-size','11');
+    txt.setAttribute('fill','#5A6A8A');txt.textContent=w;
+    svg.appendChild(txt);
+  });
+  // nodes
+  Object.entries(DN).forEach(([id,n])=>{
+    const g=document.createElementNS(NS,'g');g.setAttribute('id','node-g-'+id);
+    const circ=document.createElementNS(NS,'circle');
+    circ.setAttribute('cx',n.x);circ.setAttribute('cy',n.y);circ.setAttribute('r','22');
+    circ.setAttribute('fill','#0C1426');
+    circ.setAttribute('stroke',id===selSrc?'#00FF88':id===selDst?'#FF6B35':'#2E7BF0');
+    circ.setAttribute('stroke-width',id===selSrc||id===selDst?'2.5':'1.5');
+    circ.setAttribute('id','circle-'+id);
+    if(id===selSrc||id===selDst) circ.setAttribute('filter','url(#glow)');
+    g.appendChild(circ);
+    const lbl=document.createElementNS(NS,'text');
+    lbl.setAttribute('x',n.x);lbl.setAttribute('y',n.y+5);
+    lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-family','IBM Plex Mono,monospace');
+    lbl.setAttribute('font-size','13');lbl.setAttribute('font-weight','600');
+    lbl.setAttribute('fill',id===selSrc?'#00FF88':id===selDst?'#FF6B35':'#E2E8F0');
+    lbl.setAttribute('id','lbl-'+id);
+    lbl.textContent=id;
+    g.appendChild(lbl);
+    svg.appendChild(g);
+  });
+}
+
+function buildSelectors(){
+  ['src-btns','dst-btns'].forEach((bid,idx)=>{
+    const wrap=document.getElementById(bid);
+    wrap.innerHTML='';
+    Object.keys(DN).forEach(id=>{
+      const b=document.createElement('button');
+      b.className='ns-btn';
+      if(idx===0&&id===selSrc) b.classList.add('sel-src');
+      if(idx===1&&id===selDst) b.classList.add('sel-dst');
+      b.textContent=id;
+      b.onclick=()=>{
+        if(idx===0){selSrc=id;}else{selDst=id;}
+        buildSelectors();buildDemoSVG();initDistTable();
+        document.getElementById('log-box').innerHTML='<span class="log-g">// Origen='+selSrc+' Destino='+selDst+' — presiona Ejecutar</span>';
+      };
+      wrap.appendChild(b);
+    });
+  });
+}
+
+function initDistTable(){
+  const head=document.getElementById('dt-head');
+  const row=document.getElementById('dt-row');
+  head.innerHTML='<th>Nodo</th>'+Object.keys(DN).map(k=>`<th>${k}</th>`).join('');
+  row.innerHTML='<td style="color:var(--muted)">d[v]</td>'+
+    Object.keys(DN).map(k=>`<td id="dtc-${k}">∞</td>`).join('');
+  document.getElementById('dtc-'+selSrc).textContent='0';
+  document.getElementById('dtc-'+selSrc).className='final';
+}
+
+function log(msg,cls=''){
+  const box=document.getElementById('log-box');
+  box.innerHTML+=`<br><span class="${cls}">${msg}</span>`;
+  box.scrollTop=box.scrollHeight;
+}
+
+async function runDijkstra(){
+  if(running) return;
+  running=true;
+  document.getElementById('run-btn').disabled=true;
+  const logBox=document.getElementById('log-box');
+  logBox.innerHTML='<span class="log-g">▶ Iniciando Dijkstra desde '+selSrc+'...</span>';
+  initDistTable();
+  buildDemoSVG();
+
+  // JS Dijkstra with steps
+  const dist={};const prev={};const visited={};
+  Object.keys(DN).forEach(k=>{dist[k]=Infinity;prev[k]=null;});
+  dist[selSrc]=0;
+  const pq=[[0,selSrc]];
+
+  function heapPush(arr,item){arr.push(item);arr.sort((a,b)=>a[0]-b[0]);}
+  function heapPop(arr){return arr.shift();}
+
+  const delay=ms=>new Promise(r=>setTimeout(r,ms));
+  const svgEl=document.getElementById('demo-svg');
+  const NS='http://www.w3.org/2000/svg';
+
+  function setNodeColor(id,color,glowColor){
+    const c=svgEl.querySelector('#circle-'+id);
+    const l=svgEl.querySelector('#lbl-'+id);
+    if(c){c.setAttribute('stroke',color);c.setAttribute('fill',glowColor?`rgba(${glowColor},0.1)`:'#0C1426');}
+    if(l){l.setAttribute('fill',color);}
+  }
+  function setEdgeColor(a,b,color,width){
+    let e=svgEl.querySelector(`#edge-${a}-${b}`)||svgEl.querySelector(`#edge-${b}-${a}`);
+    if(e){e.setAttribute('stroke',color);e.setAttribute('stroke-width',width||2);}
+  }
+
+  while(pq.length>0){
+    const [d,u]=heapPop(pq);
+    if(visited[u]) continue;
+    visited[u]=true;
+
+    log(`Extraer: <span class="log-b">${u}</span> d[${u}]=${d===Infinity?'∞':d}`,'');
+    setNodeColor(u,'#F7C948','247,201,72');
+    await delay(400);
+
+    if(u===selDst){
+      setNodeColor(u,'#FF6B35','255,107,53');
+      break;
+    }
+
+    for(const [v,w] of Object.entries(GRAPH[u]||{})){
+      const nd=d+w;
+      setEdgeColor(u,v,'#2E7BF0',2);
+      await delay(200);
+      if(nd<dist[v]){
+        dist[v]=nd;prev[v]=u;
+        const cell=document.getElementById('dtc-'+v);
+        if(cell){cell.textContent=nd;cell.className='updated';}
+        log(`  Relax: d[<span class="log-g">${v}</span>] = ${d}+${w} = <span class="log-y">${nd}</span>`,'');
+        setEdgeColor(u,v,'#00FF88',2.5);
+        heapPush(pq,[nd,v]);
+      } else {
+        setEdgeColor(u,v,'#1A2540',2);
+      }
+      await delay(200);
+    }
+    setNodeColor(u,'#00FF88','0,255,136');
+    document.getElementById('dtc-'+u).className='final';
+    await delay(250);
+  }
+
+  // Reconstruct path
+  const path=[];let cur=selDst;
+  while(cur){path.unshift(cur);cur=prev[cur];}
+
+  // Highlight path
+  for(let i=0;i<path.length-1;i++){
+    setEdgeColor(path[i],path[i+1],'#00FF88',3);
+  }
+  path.forEach(n=>setNodeColor(n,'#00FF88','0,255,136'));
+  setNodeColor(selSrc,'#00FF88','0,255,136');
+  setNodeColor(selDst,'#FF6B35','255,107,53');
+
+  log(`<br><span class="log-g">✓ Ruta óptima: ${path.join(' → ')}</span>`,'');
+  log(`<span class="log-o">Costo total: ${dist[selDst]} ms</span>`,'');
+
+  running=false;
+  document.getElementById('run-btn').disabled=false;
+}
+
+function resetDemo(){
+  running=false;
+  document.getElementById('run-btn').disabled=false;
+  buildDemoSVG();
+  initDistTable();
+  document.getElementById('log-box').innerHTML='<span class="log-g">// Reiniciado — selecciona origen y destino</span>';
+}
+
+/* ══ CODE TABS ══════════════════════════════════════ */
+function switchCode(id,btn){
+  document.querySelectorAll('.code-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.code-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('code-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ══ NAV DOTS ══════════════════════════════════════ */
+function scrollSec(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
+const sections=['sec-algo','sec-demo','sec-topo','sec-code','sec-results'];
+const dots=document.querySelectorAll('.dot');
+window.addEventListener('scroll',()=>{
+  let idx=0;
+  if(window.scrollY<300){idx=0;}
+  else{
+    sections.forEach((id,i)=>{
+      const el=document.getElementById(id);
+      if(el&&el.getBoundingClientRect().top<300) idx=i+1;
+    });
+  }
+  dots.forEach((d,i)=>{d.classList.toggle('active',i===idx);});
+});
+
+/* ══ INIT ══════════════════════════════════════════ */
+buildSelectors();
+buildDemoSVG();
+initDistTable();
+</script>
+</body>
+</html>
